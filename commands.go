@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"time"
 
@@ -56,6 +57,21 @@ func handlerLogin(s *state, cmd command) error {
 	return nil
 }
 
+func reset(s *state, cmd command) error {
+	if len(cmd.Args) > 1 {
+		return fmt.Errorf("No arguments needed")
+	}
+
+	ctx := context.Background()
+	err := s.db.DeletUsers(ctx)
+	if err != nil {
+		return fmt.Errorf("Error cleaning the database")
+	}
+
+	fmt.Println("Database cleaned suceesfully")
+	return nil
+}
+
 func handlerRegister(s *state, cmd command) error {
 	if len(cmd.Args) < 1 {
 		return fmt.Errorf("Need more arguemnts")
@@ -92,6 +108,38 @@ func handlerRegister(s *state, cmd command) error {
 	}
 	fmt.Println(data)
 	fmt.Println("User added suceesfully")
+
+	return nil
+}
+
+func getUsers(s *state, cmd command) error {
+	if len(cmd.Args) > 1 {
+		return fmt.Errorf("No arguments needed")
+	}
+
+	ctx := context.Background()
+	data, err := s.db.GetUsers(ctx)
+	if err != nil {
+		return fmt.Errorf("Error traying to get users")
+	}
+
+	jsonData, err := json.Marshal(data)
+	if err != nil {
+		return fmt.Errorf("Error converting to JSON: ", err)
+	}
+
+	var users []database.User
+	if err := json.Unmarshal(jsonData, &users); err != nil {
+		return fmt.Errorf("error deserializing: %w", err)
+	}
+
+	for _, u := range users {
+		if u.Name.String == s.cfg.Current_user_name {
+			fmt.Printf("* %v (current)\n", u.Name.String)
+		} else {
+			fmt.Printf("* %v\n", u.Name.String)
+		}
+	}
 
 	return nil
 }
