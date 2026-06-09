@@ -31,3 +31,4 @@ go.work.sum
 # .idea/
 # .vscode/
 .gatorconfig.json
+.DS_Store
